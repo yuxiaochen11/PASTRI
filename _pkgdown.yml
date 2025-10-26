@@ -2,3 +2,5 @@ template:
   bootstrap: 5
 development:
   mode: unreleased
+
+url: https://github.com/yuxiaochen11/PASTRI.git
