@@ -1,0 +1,6 @@
+pandoc: 3.1.1
+pkgdown: 2.1.1
+pkgdown_sha: ~
+articles:
+  HSC: HSC.html
+last_built: 2025-10-26T13:34Z

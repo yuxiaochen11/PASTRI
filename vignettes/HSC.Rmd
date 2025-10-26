@@ -1,0 +1,87 @@
+---
+title: 
+author: 
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(PASTRI)
+library(tidyverse)
+library(parallel)
+library(ape)
+library(ggtree)
+library(argparse)
+library(magrittr)
+library(patchwork)
+library(ggridges)
+library(reshape2)
+library(tidyr)
+library(stats)
+library(Matrix)
+library(expm)
+library(pracma)
+library(ggplot2)
+library(data.table)
+```
+
+1. Get the normalized depth of tip (cell) pairs
+
+In this section, we use the function calculate_lca_depths() to compute the normalized depth for each node (including tip/cell pairs) from the specified tree file (sample.nwk)
+```{r}
+# Assume that calculate_lca_depths() is a custom or externally provided function
+# that takes an NWK file path and returns a data structure (e.g., data frame)
+# containing the depth of each node/tip.
+
+tree_file <- system.file("extdata", "HSC.nwk", package = "PASTRI")
+
+sample.node.depth <- calculate_lca_depths(tree.path = tree_file)
+
+# Display the first few rows of the resulting node depth information
+head(sample.node.depth)
+```
+
+2. Get the optimal transition matrix
+
+Next, we demonstrate the use of the function get_optimal_transition_matrix() to obtain the optimal transition matrix. We will illustrate multiple iterations over a set of depth thresholds (depth) and combine all results into a single data frame df_mrca.mheight.
+
+Analysis was restricted to single-cell leaves from the lineage tree (i.e., cellNum == 1 in "data/HSC_nodeInfos.csv").
+```{r}
+
+# Read the CSV file that contains cell information
+cell_file <- system.file("extdata", "HSC_nodeInfos.csv", package = "PASTRI")
+cell <- read.csv(cell_file, stringsAsFactors = FALSE)
+
+
+# Specify a series of depth thresholds to test
+depth <- c(0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0)
+
+# Set cell type
+cell_type <- c("C4", "C5", "C6", "C7", "C8")
+
+# Constrained matrix
+# represent prior knowledge such as irreversible state transitions
+Bound_matrix <- matrix(Inf, nrow = length(cell_type), ncol = length(cell_type))
+Bound_matrix[upper.tri(Bound_matrix)] <- 0
+
+
+# Use lapply to loop over each depth threshold
+df_depth <- lapply(seq(length(depth)), function(d) {
+  sel.depth <- depth[d]
+  print(sel.depth)  # Print the current depth threshold
+    
+  # Call get_optimal_transition_matrix() with the specified parameters
+  mrca.mheight_optimal_results_d <- get_optimal_transition_matrix(
+    node_pair_depth = sample.node.depth,
+    cell_info = cell,
+    Sel_u = "lca_normalized_height",
+    fi_depth = sel.depth,
+    Bound_Matrix = Bound_matrix,
+    cell_type_list = cell_type
+    )
+  return( mrca.mheight_optimal_results_d)
+})
+
+# Show the transition matrix of depth 0.2
+df_depth[[4]]$optimal_matrix %>% t()
+```
