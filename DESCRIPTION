@@ -1,11 +1,24 @@
 Package: PASTRI
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Title: Inferring Cell State Transition Probabilities on Lineage Trees
+Version: 0.0.1
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    c(
+      person(
+        given = "YourFirstName",
+        family = "YourLastName",
+        email = "your_email@example.com",
+        role = c("aut", "cre"),
+        comment = c(ORCID = "0000-0000-0000-0000")
+      )
+    )
+
+Description: PASTRI infers directed transition probabilities between
+    cell states along a lineage tree reconstructed from CRISPR/Cas9
+    barcodes or somatic mutations. It estimates pairwise latest
+    common ancestor depths, constrains biologically irreversible
+    transitions, and returns an optimal transition matrix across
+    specified cell types.
+License: MIT license
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
