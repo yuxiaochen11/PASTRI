@@ -57,15 +57,11 @@
 #' }
 #'
 #' @export
-get_optimal_transition_matrix <- function(
-    node_pair_depth,
-    cell_info,
-    Sel_u,
-    fi_depth,
-    Bound_Matrix,
-    cell_type_list,
-    mc.cores = parallel::detectCores()
-) {
+get_optimal_transition_matrix <- function(node_pair_depth,
+                                          cell_info,Sel_u,
+                                          fi_depth,Bound_Matrix,
+                                          cell_type_list,
+                                          mc.cores = parallel::detectCores()) {
   ## ----------------------------------------------------------------------
   ## 0. make mc.cores safe on Windows
   ##    (pkgdown builds vignette on Windows-like env where mclapply>1 dies)
@@ -74,7 +70,7 @@ get_optimal_transition_matrix <- function(
   } else {
     mc.cores <- max(1L, as.integer(mc.cores))
   }
-
+  
   ## helper to safely do parallel::mclapply or fallback to lapply
   safe_mclapply <- function(X, FUN, ...) {
     if (.Platform$OS.type == "windows" || mc.cores <= 1L) {
@@ -84,13 +80,13 @@ get_optimal_transition_matrix <- function(
     }
     out
   }
-
+  
   ## ----------------------------------------------------------------------
   ## 1. subset to terminal / single-leaf cells of desired types
   single_cell_info <- dplyr::filter(cell_info, .data$cellNum == 1)
   terminal_cells   <- dplyr::filter(single_cell_info,
                                     .data$celltype %in% cell_type_list)
-
+  
   ## ----------------------------------------------------------------------
   ## 2. compute optimal transition matrix under constraints
   ## NOTE: we forward mc.cores (as 'use_cores') to your calculate_transition_matrix
@@ -104,9 +100,9 @@ get_optimal_transition_matrix <- function(
     bound_matrix      = Bound_Matrix,
     cell_type_list    = cell_type_list
   )
-
+  
   optimal_matrix <- optimal_trans_matrix_obj$optimal_trans_matrix
-
+  
   ## ----------------------------------------------------------------------
   ## 3. flatten matrix into long-form df
   combinations <- expand.grid(
@@ -114,15 +110,15 @@ get_optimal_transition_matrix <- function(
     end_cell   = rownames(optimal_matrix),
     stringsAsFactors = FALSE
   )
-
+  
   optimal_norm_list <- safe_mclapply(
     X = seq_len(nrow(combinations)),
     FUN = function(i) {
       start_cell_i <- combinations$start_cell[i]
       end_cell_i   <- combinations$end_cell[i]
-
+      
       value_i <- optimal_matrix[end_cell_i, start_cell_i]
-
+      
       dplyr::tibble(
         type_combined_new = paste(start_cell_i, end_cell_i, sep = "_"),
         start_cell        = start_cell_i,
@@ -131,13 +127,13 @@ get_optimal_transition_matrix <- function(
       )
     }
   )
-
+  
   optimal_norm_df <- dplyr::bind_rows(optimal_norm_list)
-
+  
   ## annotate depth label
   optimal_norm_df <- optimal_norm_df %>%
     dplyr::mutate(depth = paste0("d_", fi_depth))
-
+  
   ## ----------------------------------------------------------------------
   ## 4. return structured result
   return(list(
@@ -145,3 +141,4 @@ get_optimal_transition_matrix <- function(
     optimal_norm_df_dataframe  = optimal_norm_df
   ))
 }
+

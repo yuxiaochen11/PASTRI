@@ -25,6 +25,8 @@ tree_file <- system.file("extdata", "HSC.nwk", package = "PASTRI")
 # 2. Compute pairwise LCA depth / height features
 node_depth_df <- calculate_lca_depths(tree.path = tree_file)
 
+- If you want to manually specify the depth of an internal node (i.e., the root of a subtree), you can add this information to the node_depth_df data frame.
+
 # 3. Load example cell metadata
 cell_file <- system.file("extdata", "HSC_nodeInfos.csv", package = "PASTRI")
 cell_info  <- read.csv(cell_file, stringsAsFactors = FALSE)
