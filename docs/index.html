@@ -35,7 +35,8 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="articles/HSC.html">UNKNOWN TITLE</a></li>
+<li><a class="dropdown-item" href="articles/HSC.html">HSC example</a></li>
+    <li><a class="dropdown-item" href="articles/troubleshooting.html">Installation and troubleshooting</a></li>
   </ul>
 </li>
       </ul>
@@ -43,6 +44,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/yuxiaochen11/PASTRI/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -53,49 +55,230 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="pastri">PASTRI<a class="anchor" aria-label="anchor" href="#pastri"></a>
 </h1></div>
-<p>PASTRI infers the transition probability matrix between cell states along a cell lineage tree (e.g. CRISPR lineage tracing / somatic mutation phylogeny).<br>
-It uses LCA depth between pairs of terminal cells, applies biologically irreversible constraints, and solves for an optimal directed transition matrix across specified cell types.</p>
+<p>PASTRI infers a directed cell-state transition matrix from a reconstructed lineage tree and terminal-cell annotations. It is designed for lineage trees derived from CRISPR/Cas9 barcodes, somatic mutations, or similar heritable marks.</p>
+<p>The method does not infer transitions from expression pseudotime. Instead, it uses the topology of the lineage tree: terminal cells whose latest common ancestor (LCA) is close to the leaves are treated as observations from a short evolutionary separation, while pairs sharing an older LCA represent a longer separation. PASTRI combines these pairwise relationships across depth values, then applies user-defined upper bounds to encode allowed or forbidden directions.</p>
+<div class="section level2">
+<h2 id="algorithm-overview">Algorithm overview<a class="anchor" aria-label="anchor" href="#algorithm-overview"></a>
+</h2>
+<p>PASTRI runs in four stages.</p>
+<div class="section level3">
+<h3 id="id_1-convert-the-lineage-tree-into-pairwise-lca-features">1. Convert the lineage tree into pairwise LCA features<a class="anchor" aria-label="anchor" href="#id_1-convert-the-lineage-tree-into-pairwise-lca-features"></a>
+</h3>
+<p><code><a href="reference/calculate_lca_depths.html">calculate_lca_depths()</a></code> reads a Newick tree and, for every internal node, counts:</p>
+<ul>
+<li>
+<code>distance_to_root</code>: number of edges from the node to the root;</li>
+<li>
+<code>distance_to_farthest_leaf</code>: maximum number of descendant edges to a leaf.</li>
+</ul>
+<p>Let (D_{}) be the largest <code>distance_to_farthest_leaf</code> in the tree. For each internal node, the implementation calculates</p>
+<p>[  = (  + 1 -  ) ]</p>
+<p>and</p>
+<p>[  = 1 - . ]</p>
+<p>Every unordered pair of terminal nodes is then assigned the metrics of its LCA. The result contains <code>node1</code>, <code>node2</code>, <code>subtree_root</code>, <code>lca_depth</code>, <code>lca_depth_norm</code>, and <code>lca_normalized_height</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="id_2-estimate-two-cell-correlations-at-each-depth">2. Estimate two-cell correlations at each depth<a class="anchor" aria-label="anchor" href="#id_2-estimate-two-cell-correlations-at-each-depth"></a>
+</h3>
+<p>Terminal nodes are matched to <code>cell_info$nodeLabel</code> and assigned cell types. For each selected depth value (u), PASTRI counts unordered cell-type pairs and constructs a symmetric two-cell correlation matrix (C(u)). Cell-type frequencies among the selected terminal cells are used to standardize this matrix.</p>
+<p>Only depth values satisfying <code>u &lt;= fi_depth</code> are retained. Therefore, <code>fi_depth</code> is a depth cutoff, not an optimization tolerance.</p>
+</div>
+<div class="section level3">
+<h3 id="id_3-recover-one-transition-matrix-per-depth">3. Recover one transition matrix per depth<a class="anchor" aria-label="anchor" href="#id_3-recover-one-transition-matrix-per-depth"></a>
+</h3>
+<p>For each retained (C(u)), PASTRI:</p>
+<ol style="list-style-type: decimal">
+<li>standardizes the correlation matrix by cell-type frequencies;</li>
+<li>performs an eigendecomposition;</li>
+<li>truncates negative eigenvalues to zero;</li>
+<li>rescales eigenvalues by the depth-dependent power <code>1 / (2 * u)</code>;</li>
+<li>removes negative or undefined entries;</li>
+<li>normalizes every column to sum to one.</li>
+</ol>
+<p>In all returned matrices, <strong>columns are start cell types and rows are end cell types</strong>. Thus <code>matrix["C5", "C4"]</code> is the inferred transition strength from <code>C4</code> to <code>C5</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="id_4-apply-constraints-and-obtain-the-consensus-matrix">4. Apply constraints and obtain the consensus matrix<a class="anchor" aria-label="anchor" href="#id_4-apply-constraints-and-obtain-the-consensus-matrix"></a>
+</h3>
+<p>The mean of the depth-specific matrices initializes an <code>L-BFGS-B</code> optimization. PASTRI minimizes the sum of Frobenius distances between the candidate matrix (T) and all depth-specific matrices:</p>
+<p>[ _T _u T - T(u) _F. ]</p>
+<p><code>Bound_Matrix</code> supplies the element-wise upper bounds:</p>
+<ul>
+<li>
+<code>0</code> forbids a transition;</li>
+<li>
+<code>Inf</code> leaves a transition unconstrained above;</li>
+<li>a finite positive value sets a numerical upper bound.</li>
+</ul>
+<p>The bound matrix must have the same dimensions and cell-type order as <code>cell_type_list</code>. After optimization, negative/undefined entries are removed and columns are normalized again.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="input-requirements">Input requirements<a class="anchor" aria-label="anchor" href="#input-requirements"></a>
+</h2>
+<div class="section level3">
+<h3 id="lineage-tree">Lineage tree<a class="anchor" aria-label="anchor" href="#lineage-tree"></a>
+</h3>
+<ul>
+<li>Newick format;</li>
+<li>terminal labels must be unique;</li>
+<li>terminal labels must match <code>cell_info$nodeLabel</code>.</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="cell-metadata">Cell metadata<a class="anchor" aria-label="anchor" href="#cell-metadata"></a>
+</h3>
+<p><code>cell_info</code> must contain:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Column</th>
+<th>Meaning</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>nodeLabel</code></td>
+<td>label matching a terminal node in the Newick tree</td>
+</tr>
+<tr>
+<td><code>celltype</code></td>
+<td>cell-state annotation</td>
+</tr>
+<tr>
+<td><code>cellNum</code></td>
+<td>number of cells represented by the node; only <code>cellNum == 1</code> is used</td>
+</tr>
+</tbody>
+</table>
+<p>Each value in <code>cell_type_list</code> should occur among the retained terminal cells.</p>
+</div>
+</div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"yuxiaochen11/PASTRI"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"remotes"</span><span class="op">)</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"yuxiaochen11/PASTRI"</span><span class="op">)</span></span></code></pre></div>
+<p>For a reproducible Conda/R/Jupyter setup and solutions to common installation errors, see <a href="articles/troubleshooting.html">Installation and troubleshooting</a>.</p>
 </div>
 <div class="section level2">
-<h2 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
+<h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
-<pre><code><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">PASTRI</span><span class="op">)</span></span>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">PASTRI</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 1. Load example lineage tree shipped with the package</span></span>
+<span><span class="co"># 1. Load the example lineage tree.</span></span>
 <span><span class="va">tree_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"HSC.nwk"</span>, package <span class="op">=</span> <span class="st">"PASTRI"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 2. Compute pairwise LCA depth / height features</span></span>
-<span><span class="va">node_depth_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/calculate_lca_depths.html">calculate_lca_depths</a></span><span class="op">(</span>tree.path <span class="op">=</span> <span class="va">tree_file</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 3. Load example cell metadata</span></span>
-<span><span class="va">cell_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"HSC_nodeInfos.csv"</span>, package <span class="op">=</span> <span class="st">"PASTRI"</span><span class="op">)</span></span>
-<span><span class="va">cell_info</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="va">cell_file</span>, stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 4. Infer optimal constrained transition matrix</span></span>
-<span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/get_optimal_transition_matrix.html">get_optimal_transition_matrix</a></span><span class="op">(</span></span>
-<span>  node_pair_depth <span class="op">=</span> <span class="va">node_depth_df</span>,</span>
-<span>  cell_info       <span class="op">=</span> <span class="va">cell_info</span>,</span>
-<span>  Sel_u           <span class="op">=</span> <span class="st">"lca_normalized_height"</span>,</span>
-<span>  fi_depth        <span class="op">=</span> <span class="fl">0.2</span>,</span>
-<span>  Bound_Matrix    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">Inf</span>,<span class="fl">0</span>,<span class="fl">0</span>,<span class="fl">0</span>,<span class="fl">0</span>,</span>
-<span>                             <span class="cn">Inf</span>,<span class="cn">Inf</span>,<span class="fl">0</span>,<span class="fl">0</span>,<span class="fl">0</span>,</span>
-<span>                             <span class="cn">Inf</span>,<span class="cn">Inf</span>,<span class="cn">Inf</span>,<span class="fl">0</span>,<span class="fl">0</span>,</span>
-<span>                             <span class="cn">Inf</span>,<span class="cn">Inf</span>,<span class="cn">Inf</span>,<span class="cn">Inf</span>,<span class="fl">0</span>,</span>
-<span>                             <span class="cn">Inf</span>,<span class="cn">Inf</span>,<span class="cn">Inf</span>,<span class="cn">Inf</span>,<span class="cn">Inf</span><span class="op">)</span>, nrow<span class="op">=</span><span class="fl">5</span>, byrow<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span>,</span>
-<span>  cell_type_list  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"C4"</span>,<span class="st">"C5"</span>,<span class="st">"C6"</span>,<span class="st">"C7"</span>,<span class="st">"C8"</span><span class="op">)</span>,</span>
-<span>  mc.cores        <span class="op">=</span> <span class="fl">1</span></span>
+<span><span class="co"># 2. Calculate pairwise LCA features.</span></span>
+<span><span class="va">node_pair_depth</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/calculate_lca_depths.html">calculate_lca_depths</a></span><span class="op">(</span></span>
+<span>  tree.path <span class="op">=</span> <span class="va">tree_file</span>,</span>
+<span>  mc.cores <span class="op">=</span> <span class="fl">1</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">res</span><span class="op">$</span><span class="va">optimal_matrix</span></span></code></pre>
+<span><span class="co"># 3. Load terminal-cell annotations.</span></span>
+<span><span class="va">cell_file</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"HSC_nodeInfos.csv"</span>, package <span class="op">=</span> <span class="st">"PASTRI"</span><span class="op">)</span></span>
+<span><span class="va">cell_info</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="va">cell_file</span>, stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># The order defines the row/column order of every matrix.</span></span>
+<span><span class="va">cell_types</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"C4"</span>, <span class="st">"C5"</span>, <span class="st">"C6"</span>, <span class="st">"C7"</span>, <span class="st">"C8"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 4. Encode an irreversible progression C4 -&gt; C5 -&gt; C6 -&gt; C7 -&gt; C8.</span></span>
+<span><span class="co"># Rows are destinations and columns are sources. Entries above the diagonal</span></span>
+<span><span class="co"># represent backward transitions and are forbidden here.</span></span>
+<span><span class="va">bound_matrix</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span></span>
+<span>  <span class="cn">Inf</span>,</span>
+<span>  nrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">cell_types</span><span class="op">)</span>,</span>
+<span>  ncol <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">cell_types</span><span class="op">)</span>,</span>
+<span>  dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">cell_types</span>, <span class="va">cell_types</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">bound_matrix</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/lower.tri.html" class="external-link">upper.tri</a></span><span class="op">(</span><span class="va">bound_matrix</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">0</span></span>
+<span></span>
+<span><span class="co"># 5. Infer the constrained transition matrix.</span></span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/get_optimal_transition_matrix.html">get_optimal_transition_matrix</a></span><span class="op">(</span></span>
+<span>  node_pair_depth <span class="op">=</span> <span class="va">node_pair_depth</span>,</span>
+<span>  cell_info <span class="op">=</span> <span class="va">cell_info</span>,</span>
+<span>  Sel_u <span class="op">=</span> <span class="st">"lca_normalized_height"</span>,</span>
+<span>  fi_depth <span class="op">=</span> <span class="fl">0.2</span>,</span>
+<span>  Bound_Matrix <span class="op">=</span> <span class="va">bound_matrix</span>,</span>
+<span>  cell_type_list <span class="op">=</span> <span class="va">cell_types</span>,</span>
+<span>  mc.cores <span class="op">=</span> <span class="fl">1</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Column = start state; row = end state.</span></span>
+<span><span class="va">result</span><span class="op">$</span><span class="va">optimal_matrix</span></span>
+<span></span>
+<span><span class="co"># Long-form representation of the same matrix.</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">optimal_norm_df_dataframe</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="main-functions">Main functions<a class="anchor" aria-label="anchor" href="#main-functions"></a>
+</h2>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Function</th>
+<th>Purpose</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code><a href="reference/calculate_lca_depths.html">calculate_lca_depths()</a></code></td>
+<td>calculate pairwise LCA depth/height features from a Newick tree</td>
+</tr>
+<tr>
+<td><code><a href="reference/calculate_transition_matrix.html">calculate_transition_matrix()</a></code></td>
+<td>build depth-specific matrices and optimize their constrained consensus</td>
+</tr>
+<tr>
+<td><code><a href="reference/get_optimal_transition_matrix.html">get_optimal_transition_matrix()</a></code></td>
+<td>recommended high-level interface for filtering cells and formatting results</td>
+</tr>
+<tr>
+<td><code><a href="reference/calculate_transition_matrix_error.html">calculate_transition_matrix_error()</a></code></td>
+<td>Frobenius-distance objective used by the optimizer</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level2">
+<h2 id="output">Output<a class="anchor" aria-label="anchor" href="#output"></a>
+</h2>
+<p><code><a href="reference/get_optimal_transition_matrix.html">get_optimal_transition_matrix()</a></code> returns:</p>
+<ul>
+<li>
+<code>optimal_matrix</code>: constrained transition matrix, with destinations in rows and sources in columns;</li>
+<li>
+<code>optimal_norm_df_dataframe</code>: long-form table containing <code>start_cell</code>, <code>end_cell</code>, <code>norm_optimal_T</code>, and the evaluated depth label.</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="practical-notes">Practical notes<a class="anchor" aria-label="anchor" href="#practical-notes"></a>
+</h2>
+<ul>
+<li>On Windows, PASTRI automatically uses one core because <code><a href="https://rdrr.io/r/parallel/mcdummies.html" class="external-link">parallel::mclapply()</a></code> does not support fork-based multicore execution.</li>
+<li>The number of terminal-node pairs grows as (n(n-1)/2); large trees can require substantial memory and runtime.</li>
+<li>At least one observed depth must satisfy <code>u &lt;= fi_depth</code>. If none does, increase <code>fi_depth</code> or inspect the selected depth column.</li>
+<li>
+<code>cell_type_list</code> order and <code>Bound_Matrix</code> order must be identical.</li>
+<li>The output represents model-derived transition strengths under the supplied lineage and constraints; causal interpretation requires independent biological evidence.</li>
+</ul>
 </div>
 </div>
-  </main><aside class="col-md-3"><div class="license">
+  </main><aside class="col-md-3"><div class="links">
+<h2 data-toc-skip>Links</h2>
+<ul class="list-unstyled">
+<li><a href="https://github.com/yuxiaochen11/PASTRI/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/yuxiaochen11/PASTRI/issues" class="external-link">Report a bug</a></li>
+</ul>
+</div>
+
+<div class="license">
 <h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
 <li>

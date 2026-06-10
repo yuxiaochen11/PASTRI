@@ -1,6 +1,6 @@
 ---
-title: 
-author: 
+title: "HSC example"
+author: "PASTRI authors"
 date: "`r Sys.Date()`"
 output: html_document
 ---

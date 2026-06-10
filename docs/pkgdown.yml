@@ -1,9 +1,10 @@
-pandoc: 3.1.1
+pandoc: '3.10'
 pkgdown: 2.1.1
 pkgdown_sha: ~
 articles:
   HSC: HSC.html
-last_built: 2025-10-26T14:19Z
+  troubleshooting: troubleshooting.html
+last_built: 2026-06-10T09:53Z
 urls:
-  reference: https://github.com/yuxiaochen11/PASTRI.git/reference
-  article: https://github.com/yuxiaochen11/PASTRI.git/articles
+  reference: https://yuxiaochen11.github.io/PASTRI/reference
+  article: https://yuxiaochen11.github.io/PASTRI/articles

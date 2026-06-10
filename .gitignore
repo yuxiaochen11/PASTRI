@@ -7,4 +7,5 @@
 .Rbuildignore
 .vscode
 .Rproj
-
+.conda-docs/
+.cache/

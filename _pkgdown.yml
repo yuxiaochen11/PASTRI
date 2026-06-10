@@ -3,4 +3,23 @@ template:
 development:
   mode: unreleased
 
-url: https://github.com/yuxiaochen11/PASTRI.git
+url: https://yuxiaochen11.github.io/PASTRI/
+
+navbar:
+  structure:
+    left: [intro, reference, articles]
+    right: [search, github]
+  components:
+    articles:
+      text: Articles
+      menu:
+      - text: HSC example
+        href: articles/HSC.html
+      - text: Installation and troubleshooting
+        href: articles/troubleshooting.html
+
+articles:
+- title: Guides
+  contents:
+  - HSC
+  - troubleshooting

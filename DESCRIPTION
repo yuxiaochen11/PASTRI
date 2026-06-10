@@ -17,6 +17,9 @@ Description: PASTRI infers directed transition probabilities between
     common ancestor depths, constrains biologically irreversible
     transitions, and returns an optimal transition matrix across
     specified cell types.
+URL: https://yuxiaochen11.github.io/PASTRI/,
+    https://github.com/yuxiaochen11/PASTRI
+BugReports: https://github.com/yuxiaochen11/PASTRI/issues
 License: MIT license
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
