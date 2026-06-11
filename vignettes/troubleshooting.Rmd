@@ -11,22 +11,31 @@ vignette: >
 knitr::opts_chunk$set(eval = FALSE, collapse = TRUE, comment = "#>")
 ```
 
-# 安装与报错解决
+# Installation and troubleshooting
 
-本文档整理自项目提供的安装说明，并修正了其中会导致安装失败的命令。推荐使用独立的 Conda 环境安装 R、Jupyter 和 PASTRI，避免污染系统环境。
+This guide is based on the original installation notes supplied with the
+project. It corrects commands that would otherwise fail and provides solutions
+for common Conda, R, Jupyter, and PASTRI installation errors.
 
-## 1. 创建 Conda 环境
+Using a dedicated Conda environment is recommended because it keeps the PASTRI
+runtime separate from system-level R and Python installations.
 
-在 Anaconda Prompt、Miniconda Prompt 或已初始化 Conda 的终端中运行：
+## 1. Create the Conda environment
+
+Run the following commands in Anaconda Prompt, Miniconda Prompt, or another
+terminal in which Conda has been initialized:
 
 ```bash
 conda create -n PASTRI r-base=4.2.3 python=3.10 -c conda-forge
 conda activate PASTRI
 ```
 
-原始说明中的 `conda create -n R4.2.3_test` 没有指定基础软件，且 `onda activate` 少了首字母 `c`。不建议继续使用 Python 3.6：该版本已经停止维护，并且容易与当前版本的 Jupyter 依赖冲突。
+The original notes used `conda create -n R4.2.3_test` without specifying the
+packages to install, and `onda activate` was missing the initial `c`. Python
+3.6 is no longer recommended because it has reached end of life and is often
+incompatible with current Jupyter dependencies.
 
-检查当前环境：
+Verify the environment:
 
 ```bash
 conda info --envs
@@ -34,24 +43,25 @@ R --version
 python --version
 ```
 
-当前环境名称前应显示 `*`，R 应为 4.2.3，Python 应为 3.10.x。
+The active environment should have an asterisk (`*`) beside its name. R should
+report version 4.2.3 and Python should report version 3.10.x.
 
-## 2. 安装 Jupyter 内核
+## 2. Install the Jupyter kernels
 
-先安装 Python 内核：
+Install and register the Python kernel:
 
 ```bash
 python -m pip install --upgrade pip ipykernel
 python -m ipykernel install --user --name PASTRI --display-name "Python (PASTRI)"
 ```
 
-然后启动 R：
+Start R:
 
 ```bash
 R
 ```
 
-在 R 控制台中安装并注册 R 内核：
+Install and register the R kernel from the R console:
 
 ```r
 install.packages("IRkernel", repos = "https://cloud.r-project.org")
@@ -62,15 +72,15 @@ IRkernel::installspec(
 )
 ```
 
-退出 R 后检查内核：
+Exit R and verify that Jupyter can find both kernels:
 
 ```bash
 jupyter kernelspec list
 ```
 
-## 3. 安装 PASTRI
+## 3. Install PASTRI
 
-在 R 控制台中运行：
+Run the following commands in the R console:
 
 ```r
 install.packages("remotes", repos = "https://cloud.r-project.org")
@@ -84,32 +94,36 @@ library(PASTRI)
 packageVersion("PASTRI")
 ```
 
-如果从本地源码目录安装：
+To install PASTRI from a local source checkout instead:
 
 ```r
 install.packages("devtools", repos = "https://cloud.r-project.org")
 devtools::install(".")
 ```
 
-最后一条命令必须在包含 `DESCRIPTION` 文件的 PASTRI 项目根目录执行。
+Run the final command from the PASTRI project root, which is the directory
+containing the `DESCRIPTION` file.
 
-## 4. 常见报错
+## 4. Common errors
 
-### `conda: command not found` 或“无法将 conda 识别为命令”
+### `conda: command not found` or Conda is not recognized as a command
 
-**原因：** Conda 未安装，或当前终端尚未完成 Conda 初始化。
+**Cause:** Conda is not installed, or the current shell has not been
+initialized for Conda.
 
-**解决：**
+**Solution:**
 
-1. 使用 Anaconda Prompt/Miniconda Prompt；
-2. 或在已安装 Conda 的终端执行 `conda init`；
-3. 关闭并重新打开终端后再执行 `conda activate PASTRI`。
+1. Use Anaconda Prompt or Miniconda Prompt.
+2. Alternatively, run `conda init` from a terminal that can already locate
+   Conda.
+3. Close and reopen the terminal, then run `conda activate PASTRI`.
 
 ### `EnvironmentNameNotFound: Could not find conda environment`
 
-**原因：** 环境尚未创建，或环境名输入错误。
+**Cause:** The environment has not been created, or its name was entered
+incorrectly.
 
-**解决：**
+**Solution:**
 
 ```bash
 conda info --envs
@@ -117,30 +131,32 @@ conda create -n PASTRI r-base=4.2.3 python=3.10 -c conda-forge
 conda activate PASTRI
 ```
 
-环境名称区分字符，后续命令应始终使用同一个名称 `PASTRI`。
+Use the same environment name, `PASTRI`, in all subsequent commands.
 
 ### `PackagesNotFoundError: r-base=4.2.3`
 
-**原因：** 默认 channel 中没有目标版本。
+**Cause:** The requested R version is not available from the currently
+configured default channels.
 
-**解决：**
+**Solution:**
 
 ```bash
 conda create -n PASTRI r-base=4.2.3 python=3.10 -c conda-forge
 ```
 
-也可以先配置 channel：
+You can also configure conda-forge before creating the environment:
 
 ```bash
 conda config --add channels conda-forge
 conda config --set channel_priority strict
 ```
 
-### `No module named pip` 或 `No module named ipykernel`
+### `No module named pip` or `No module named ipykernel`
 
-**原因：** 命令调用了错误环境中的 Python，或当前环境没有安装相应包。
+**Cause:** The command is using Python from another environment, or the
+required package is not installed in the active environment.
 
-**解决：**
+**Solution:**
 
 ```bash
 conda activate PASTRI
@@ -148,13 +164,15 @@ conda install pip ipykernel -c conda-forge
 python -m pip show ipykernel
 ```
 
-使用 `python -m pip` 比直接使用 `pip` 更容易保证包被安装到当前 Python 环境。
+Using `python -m pip` instead of `pip` helps ensure that packages are installed
+for the Python interpreter in the active environment.
 
 ### `there is no package called 'IRkernel'`
 
-**原因：** IRkernel 尚未安装到当前 R 库，或 Jupyter 使用的不是当前 Conda 环境。
+**Cause:** IRkernel is not installed in the active R library, or Jupyter and R
+are being run from different environments.
 
-**解决：**
+**Solution:**
 
 ```r
 install.packages("IRkernel", repos = "https://cloud.r-project.org")
@@ -165,21 +183,23 @@ IRkernel::installspec(
 )
 ```
 
-在 R 中运行 `.libPaths()` 可确认实际使用的包目录。
+Run `.libPaths()` in R to check which package libraries are active.
 
 ### `installation of package ... had non-zero exit status`
 
-**原因：** 通常是 R 依赖包、编译工具或系统库缺失。请向上查找日志中出现的第一条 `ERROR`，最后一行往往只是汇总信息。
+**Cause:** An R dependency, compiler, or system library is usually missing.
+Search upward in the installation log for the first `ERROR`; the final line is
+often only a summary.
 
-**解决顺序：**
+**Recommended checks:**
 
-1. 重新激活 `PASTRI` 环境；
-2. 安装缺失的 R 包；
-3. Windows 安装与 R 4.2.x 匹配的 Rtools42；
-4. Linux 根据首条错误安装缺失的开发库；
-5. 重新执行 `remotes::install_github(..., dependencies = TRUE)`。
+1. Reactivate the `PASTRI` environment.
+2. Install the missing R package named near the first error.
+3. On Windows, install Rtools42 for R 4.2.x.
+4. On Linux, install the development library identified by the first error.
+5. Run `remotes::install_github(..., dependencies = TRUE)` again.
 
-Windows 可检查编译工具：
+On Windows, check whether R can find the build tools:
 
 ```r
 install.packages("pkgbuild", repos = "https://cloud.r-project.org")
@@ -188,9 +208,10 @@ pkgbuild::has_build_tools(debug = TRUE)
 
 ### `package 'PASTRI' is not available for this version of R`
 
-**原因：** `install.packages("PASTRI")` 会在 CRAN 中查找，而 PASTRI 当前通过 GitHub 或本地源码安装。
+**Cause:** `install.packages("PASTRI")` searches CRAN, but PASTRI is currently
+installed from GitHub or a local source checkout.
 
-**解决：**
+**Solution:**
 
 ```r
 install.packages("remotes", repos = "https://cloud.r-project.org")
@@ -199,9 +220,11 @@ remotes::install_github("yuxiaochen11/PASTRI", dependencies = TRUE)
 
 ### `Error: Failed to install 'unknown package' from GitHub`
 
-**原因：** 网络无法访问 GitHub、仓库地址错误、GitHub API 限流，或缺少 GitHub 凭据。
+**Cause:** GitHub may be unreachable, the repository address may be incorrect,
+the GitHub API rate limit may have been reached, or authentication may be
+missing.
 
-**排查：**
+**Diagnostic installation command:**
 
 ```r
 remotes::install_github(
@@ -212,20 +235,23 @@ remotes::install_github(
 )
 ```
 
-若日志显示 API rate limit，可创建 GitHub Personal Access Token，然后在 R 中配置：
+If the log reports an API rate limit, create a GitHub Personal Access Token
+and configure it in R:
 
 ```r
 install.packages("gitcreds", repos = "https://cloud.r-project.org")
 gitcreds::gitcreds_set()
 ```
 
-不要把 token 写入脚本、README 或提交到 Git。
+Never store a token in a script, README, or Git commit.
 
 ### `'mc.cores' > 1 is not supported on Windows`
 
-**原因：** Windows 不支持 `parallel::mclapply()` 使用 fork 多进程。
+**Cause:** Windows does not support the fork-based multicore implementation
+used by `parallel::mclapply()`.
 
-**解决：** 显式设置单核。PASTRI 的高层函数也会在 Windows 自动回退到单核。
+**Solution:** Explicitly request one core. PASTRI's high-level functions also
+fall back to one core automatically on Windows.
 
 ```r
 node_pair_depth <- calculate_lca_depths(tree.path, mc.cores = 1)
@@ -241,11 +267,13 @@ result <- get_optimal_transition_matrix(
 )
 ```
 
-### `object 'node_info' not found` 或 `object 'bound_matrix' not found`
+### `object 'node_info' not found` or `object 'bound_matrix' not found`
 
-**原因：** 直接运行了函数帮助页面中的片段，但没有先创建输入对象。
+**Cause:** A partial example from a function reference page was executed
+without first creating its input objects.
 
-**解决：** 优先运行 README 中的完整 Quick start。确认以下对象均已存在：
+**Solution:** Run the complete Quick start example in the README. Confirm that
+the required objects exist:
 
 ```r
 ls()
@@ -254,17 +282,17 @@ str(cell_info)
 str(bound_matrix)
 ```
 
-### `subscript out of bounds`、矩阵维度不一致或结果全为 0
+### `subscript out of bounds`, incompatible matrix dimensions, or an all-zero result
 
-**常见原因：**
+**Common causes:**
 
-- `cell_type_list` 与 `Bound_Matrix` 的顺序或维度不一致；
-- 树的叶标签无法匹配 `cell_info$nodeLabel`；
-- 某个选定细胞类型没有 `cellNum == 1` 的记录；
-- 没有深度值满足 `u <= fi_depth`；
-- 约束矩阵意外禁止了所有候选方向。
+- `cell_type_list` and `Bound_Matrix` use different dimensions or ordering.
+- Tree tip labels do not match `cell_info$nodeLabel`.
+- A selected cell type has no record with `cellNum == 1`.
+- No depth value satisfies `u <= fi_depth`.
+- The constraint matrix accidentally forbids every candidate direction.
 
-**检查：**
+**Checks:**
 
 ```r
 stopifnot(
@@ -277,24 +305,26 @@ setdiff(node_pair_depth$node1, cell_info$nodeLabel)
 range(node_pair_depth$lca_normalized_height, na.rm = TRUE)
 ```
 
-输出矩阵采用“行 = 终点、列 = 起点”的方向。若要禁止从 `C5` 到 `C4`，应设置：
+The output matrix uses destinations as rows and sources as columns. To forbid
+a transition from `C5` to `C4`, set:
 
 ```r
 bound_matrix["C4", "C5"] <- 0
 ```
 
-### Jupyter 中找不到 `R 4.2.3 (PASTRI)`
+### Jupyter does not show `R 4.2.3 (PASTRI)`
 
-**原因：** 内核未注册、注册到其他用户，或 Jupyter 来自另一个环境。
+**Cause:** The kernel was not registered, was registered for another user, or
+Jupyter is being run from another environment.
 
-**解决：**
+**Solution:**
 
 ```bash
 conda activate PASTRI
 jupyter kernelspec list
 ```
 
-然后在该环境的 R 中重新运行：
+Then start R from the active environment and register the kernel again:
 
 ```r
 IRkernel::installspec(
@@ -304,9 +334,10 @@ IRkernel::installspec(
 )
 ```
 
-## 5. 最小诊断信息
+## 5. Minimum diagnostic information
 
-提交 issue 或寻求帮助时，请附上以下输出，并删除用户名、token 等敏感信息：
+When opening an issue or requesting help, include the following output after
+removing usernames, tokens, and other sensitive information:
 
 ```r
 sessionInfo()
@@ -314,7 +345,7 @@ sessionInfo()
 packageVersion("PASTRI")
 ```
 
-终端信息：
+Also include the following terminal output:
 
 ```bash
 conda info --envs
@@ -322,4 +353,5 @@ conda list
 jupyter kernelspec list
 ```
 
-同时附上完整错误日志中从第一条 `ERROR` 开始的部分，以及触发错误的最小代码。
+Include the complete part of the installation log beginning at the first
+`ERROR`, together with the smallest code example that reproduces the problem.

@@ -66,37 +66,44 @@
     
     
 <div class="section level2">
-<h2 id="安装与报错解决">安装与报错解决<a class="anchor" aria-label="anchor" href="#%E5%AE%89%E8%A3%85%E4%B8%8E%E6%8A%A5%E9%94%99%E8%A7%A3%E5%86%B3"></a>
+<h2 id="installation-and-troubleshooting">Installation and troubleshooting<a class="anchor" aria-label="anchor" href="#installation-and-troubleshooting"></a>
 </h2>
-<p>本文档整理自项目提供的安装说明，并修正了其中会导致安装失败的命令。推荐使用独立的
-Conda 环境安装 R、Jupyter 和 PASTRI，避免污染系统环境。</p>
+<p>This guide is based on the original installation notes supplied with
+the project. It corrects commands that would otherwise fail and provides
+solutions for common Conda, R, Jupyter, and PASTRI installation
+errors.</p>
+<p>Using a dedicated Conda environment is recommended because it keeps
+the PASTRI runtime separate from system-level R and Python
+installations.</p>
 <div class="section level3">
-<h3 id="创建-conda-环境">1. 创建 Conda 环境<a class="anchor" aria-label="anchor" href="#%E5%88%9B%E5%BB%BA-conda-%E7%8E%AF%E5%A2%83"></a>
+<h3 id="create-the-conda-environment">1. Create the Conda environment<a class="anchor" aria-label="anchor" href="#create-the-conda-environment"></a>
 </h3>
-<p>在 Anaconda Prompt、Miniconda Prompt 或已初始化 Conda
-的终端中运行：</p>
+<p>Run the following commands in Anaconda Prompt, Miniconda Prompt, or
+another terminal in which Conda has been initialized:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="ex">conda</span> create <span class="at">-n</span> PASTRI r-base=4.2.3 python=3.10 <span class="at">-c</span> conda-forge</span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="ex">conda</span> activate PASTRI</span></code></pre></div>
-<p>原始说明中的 <code>conda create -n R4.2.3_test</code>
-没有指定基础软件，且 <code>onda activate</code> 少了首字母
-<code>c</code>。不建议继续使用 Python
-3.6：该版本已经停止维护，并且容易与当前版本的 Jupyter 依赖冲突。</p>
-<p>检查当前环境：</p>
+<p>The original notes used <code>conda create -n R4.2.3_test</code>
+without specifying the packages to install, and
+<code>onda activate</code> was missing the initial <code>c</code>.
+Python 3.6 is no longer recommended because it has reached end of life
+and is often incompatible with current Jupyter dependencies.</p>
+<p>Verify the environment:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="ex">conda</span> info <span class="at">--envs</span></span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="ex">R</span> <span class="at">--version</span></span>
 <span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="ex">python</span> <span class="at">--version</span></span></code></pre></div>
-<p>当前环境名称前应显示 <code>*</code>，R 应为 4.2.3，Python 应为
-3.10.x。</p>
+<p>The active environment should have an asterisk (<code>*</code>)
+beside its name. R should report version 4.2.3 and Python should report
+version 3.10.x.</p>
 </div>
 <div class="section level3">
-<h3 id="安装-jupyter-内核">2. 安装 Jupyter 内核<a class="anchor" aria-label="anchor" href="#%E5%AE%89%E8%A3%85-jupyter-%E5%86%85%E6%A0%B8"></a>
+<h3 id="install-the-jupyter-kernels">2. Install the Jupyter kernels<a class="anchor" aria-label="anchor" href="#install-the-jupyter-kernels"></a>
 </h3>
-<p>先安装 Python 内核：</p>
+<p>Install and register the Python kernel:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="ex">python</span> <span class="at">-m</span> pip install <span class="at">--upgrade</span> pip ipykernel</span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="ex">python</span> <span class="at">-m</span> ipykernel install <span class="at">--user</span> <span class="at">--name</span> PASTRI <span class="at">--display-name</span> <span class="st">"Python (PASTRI)"</span></span></code></pre></div>
-<p>然后启动 R：</p>
+<p>Start R:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="ex">R</span></span></code></pre></div>
-<p>在 R 控制台中安装并注册 R 内核：</p>
+<p>Install and register the R kernel from the R console:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"IRkernel"</span>, repos <span class="op">=</span> <span class="st">"https://cloud.r-project.org"</span><span class="op">)</span></span>
 <span><span class="fu">IRkernel</span><span class="fu">::</span><span class="fu">installspec</span><span class="op">(</span></span>
@@ -104,13 +111,13 @@ Conda 环境安装 R、Jupyter 和 PASTRI，避免污染系统环境。</p>
 <span>  displayname <span class="op">=</span> <span class="st">"R 4.2.3 (PASTRI)"</span>,</span>
 <span>  user <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>退出 R 后检查内核：</p>
+<p>Exit R and verify that Jupyter can find both kernels:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="ex">jupyter</span> kernelspec list</span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="安装-pastri">3. 安装 PASTRI<a class="anchor" aria-label="anchor" href="#%E5%AE%89%E8%A3%85-pastri"></a>
+<h3 id="install-pastri">3. Install PASTRI<a class="anchor" aria-label="anchor" href="#install-pastri"></a>
 </h3>
-<p>在 R 控制台中运行：</p>
+<p>Run the following commands in the R console:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"remotes"</span>, repos <span class="op">=</span> <span class="st">"https://cloud.r-project.org"</span><span class="op">)</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span></span>
@@ -121,74 +128,81 @@ Conda 环境安装 R、Jupyter 和 PASTRI，避免污染系统环境。</p>
 <span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">PASTRI</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/packageDescription.html" class="external-link">packageVersion</a></span><span class="op">(</span><span class="st">"PASTRI"</span><span class="op">)</span></span></code></pre></div>
-<p>如果从本地源码目录安装：</p>
+<p>To install PASTRI from a local source checkout instead:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span>, repos <span class="op">=</span> <span class="st">"https://cloud.r-project.org"</span><span class="op">)</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="st">"."</span><span class="op">)</span></span></code></pre></div>
-<p>最后一条命令必须在包含 <code>DESCRIPTION</code> 文件的 PASTRI
-项目根目录执行。</p>
+<p>Run the final command from the PASTRI project root, which is the
+directory containing the <code>DESCRIPTION</code> file.</p>
 </div>
 <div class="section level3">
-<h3 id="常见报错">4. 常见报错<a class="anchor" aria-label="anchor" href="#%E5%B8%B8%E8%A7%81%E6%8A%A5%E9%94%99"></a>
+<h3 id="common-errors">4. Common errors<a class="anchor" aria-label="anchor" href="#common-errors"></a>
 </h3>
 <div class="section level4">
-<h4 id="conda-command-not-found-或无法将-conda-识别为命令">
-<code>conda: command not found</code> 或“无法将 conda
-识别为命令”<a class="anchor" aria-label="anchor" href="#conda-command-not-found-%E6%88%96%E6%97%A0%E6%B3%95%E5%B0%86-conda-%E8%AF%86%E5%88%AB%E4%B8%BA%E5%91%BD%E4%BB%A4"></a>
+<h4 id="conda-command-not-found-or-conda-is-not-recognized-as-a-command">
+<code>conda: command not found</code> or Conda is not recognized as
+a command<a class="anchor" aria-label="anchor" href="#conda-command-not-found-or-conda-is-not-recognized-as-a-command"></a>
 </h4>
-<p><strong>原因：</strong> Conda 未安装，或当前终端尚未完成 Conda
-初始化。</p>
-<p><strong>解决：</strong></p>
+<p><strong>Cause:</strong> Conda is not installed, or the current shell
+has not been initialized for Conda.</p>
+<p><strong>Solution:</strong></p>
 <ol style="list-style-type: decimal">
-<li>使用 Anaconda Prompt/Miniconda Prompt；</li>
-<li>或在已安装 Conda 的终端执行 <code>conda init</code>；</li>
-<li>关闭并重新打开终端后再执行 <code>conda activate PASTRI</code>。</li>
+<li>Use Anaconda Prompt or Miniconda Prompt.</li>
+<li>Alternatively, run <code>conda init</code> from a terminal that can
+already locate Conda.</li>
+<li>Close and reopen the terminal, then run
+<code>conda activate PASTRI</code>.</li>
 </ol>
 </div>
 <div class="section level4">
 <h4 id="environmentnamenotfound-could-not-find-conda-environment">
 <code>EnvironmentNameNotFound: Could not find conda environment</code><a class="anchor" aria-label="anchor" href="#environmentnamenotfound-could-not-find-conda-environment"></a>
 </h4>
-<p><strong>原因：</strong> 环境尚未创建，或环境名输入错误。</p>
-<p><strong>解决：</strong></p>
+<p><strong>Cause:</strong> The environment has not been created, or its
+name was entered incorrectly.</p>
+<p><strong>Solution:</strong></p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="ex">conda</span> info <span class="at">--envs</span></span>
 <span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="ex">conda</span> create <span class="at">-n</span> PASTRI r-base=4.2.3 python=3.10 <span class="at">-c</span> conda-forge</span>
 <span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="ex">conda</span> activate PASTRI</span></code></pre></div>
-<p>环境名称区分字符，后续命令应始终使用同一个名称
-<code>PASTRI</code>。</p>
+<p>Use the same environment name, <code>PASTRI</code>, in all subsequent
+commands.</p>
 </div>
 <div class="section level4">
 <h4 id="packagesnotfounderror-r-base4-2-3">
 <code>PackagesNotFoundError: r-base=4.2.3</code><a class="anchor" aria-label="anchor" href="#packagesnotfounderror-r-base4-2-3"></a>
 </h4>
-<p><strong>原因：</strong> 默认 channel 中没有目标版本。</p>
-<p><strong>解决：</strong></p>
+<p><strong>Cause:</strong> The requested R version is not available from
+the currently configured default channels.</p>
+<p><strong>Solution:</strong></p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="ex">conda</span> create <span class="at">-n</span> PASTRI r-base=4.2.3 python=3.10 <span class="at">-c</span> conda-forge</span></code></pre></div>
-<p>也可以先配置 channel：</p>
+<p>You can also configure conda-forge before creating the
+environment:</p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="ex">conda</span> config <span class="at">--add</span> channels conda-forge</span>
 <span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="ex">conda</span> config <span class="at">--set</span> channel_priority strict</span></code></pre></div>
 </div>
 <div class="section level4">
-<h4 id="no-module-named-pip-或-no-module-named-ipykernel">
-<code>No module named pip</code> 或
-<code>No module named ipykernel</code><a class="anchor" aria-label="anchor" href="#no-module-named-pip-%E6%88%96-no-module-named-ipykernel"></a>
+<h4 id="no-module-named-pip-or-no-module-named-ipykernel">
+<code>No module named pip</code> or
+<code>No module named ipykernel</code><a class="anchor" aria-label="anchor" href="#no-module-named-pip-or-no-module-named-ipykernel"></a>
 </h4>
-<p><strong>原因：</strong> 命令调用了错误环境中的
-Python，或当前环境没有安装相应包。</p>
-<p><strong>解决：</strong></p>
+<p><strong>Cause:</strong> The command is using Python from another
+environment, or the required package is not installed in the active
+environment.</p>
+<p><strong>Solution:</strong></p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="ex">conda</span> activate PASTRI</span>
 <span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="ex">conda</span> install pip ipykernel <span class="at">-c</span> conda-forge</span>
 <span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="ex">python</span> <span class="at">-m</span> pip show ipykernel</span></code></pre></div>
-<p>使用 <code>python -m pip</code> 比直接使用 <code>pip</code>
-更容易保证包被安装到当前 Python 环境。</p>
+<p>Using <code>python -m pip</code> instead of <code>pip</code> helps
+ensure that packages are installed for the Python interpreter in the
+active environment.</p>
 </div>
 <div class="section level4">
 <h4 id="there-is-no-package-called-irkernel">
 <code>there is no package called 'IRkernel'</code><a class="anchor" aria-label="anchor" href="#there-is-no-package-called-irkernel"></a>
 </h4>
-<p><strong>原因：</strong> IRkernel 尚未安装到当前 R 库，或 Jupyter
-使用的不是当前 Conda 环境。</p>
-<p><strong>解决：</strong></p>
+<p><strong>Cause:</strong> IRkernel is not installed in the active R
+library, or Jupyter and R are being run from different environments.</p>
+<p><strong>Solution:</strong></p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"IRkernel"</span>, repos <span class="op">=</span> <span class="st">"https://cloud.r-project.org"</span><span class="op">)</span></span>
 <span><span class="fu">IRkernel</span><span class="fu">::</span><span class="fu">installspec</span><span class="op">(</span></span>
@@ -196,25 +210,27 @@ Python，或当前环境没有安装相应包。</p>
 <span>  displayname <span class="op">=</span> <span class="st">"R 4.2.3 (PASTRI)"</span>,</span>
 <span>  user <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>在 R 中运行 <code><a href="https://rdrr.io/r/base/libPaths.html" class="external-link">.libPaths()</a></code> 可确认实际使用的包目录。</p>
+<p>Run <code><a href="https://rdrr.io/r/base/libPaths.html" class="external-link">.libPaths()</a></code> in R to check which package libraries
+are active.</p>
 </div>
 <div class="section level4">
 <h4 id="installation-of-package-----had-non-zero-exit-status">
 <code>installation of package ... had non-zero exit status</code><a class="anchor" aria-label="anchor" href="#installation-of-package-----had-non-zero-exit-status"></a>
 </h4>
-<p><strong>原因：</strong> 通常是 R
-依赖包、编译工具或系统库缺失。请向上查找日志中出现的第一条
-<code>ERROR</code>，最后一行往往只是汇总信息。</p>
-<p><strong>解决顺序：</strong></p>
+<p><strong>Cause:</strong> An R dependency, compiler, or system library
+is usually missing. Search upward in the installation log for the first
+<code>ERROR</code>; the final line is often only a summary.</p>
+<p><strong>Recommended checks:</strong></p>
 <ol style="list-style-type: decimal">
-<li>重新激活 <code>PASTRI</code> 环境；</li>
-<li>安装缺失的 R 包；</li>
-<li>Windows 安装与 R 4.2.x 匹配的 Rtools42；</li>
-<li>Linux 根据首条错误安装缺失的开发库；</li>
-<li>重新执行
-<code>remotes::install_github(..., dependencies = TRUE)</code>。</li>
+<li>Reactivate the <code>PASTRI</code> environment.</li>
+<li>Install the missing R package named near the first error.</li>
+<li>On Windows, install Rtools42 for R 4.2.x.</li>
+<li>On Linux, install the development library identified by the first
+error.</li>
+<li>Run <code>remotes::install_github(..., dependencies = TRUE)</code>
+again.</li>
 </ol>
-<p>Windows 可检查编译工具：</p>
+<p>On Windows, check whether R can find the build tools:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"pkgbuild"</span>, repos <span class="op">=</span> <span class="st">"https://cloud.r-project.org"</span><span class="op">)</span></span>
 <span><span class="fu">pkgbuild</span><span class="fu">::</span><span class="fu"><a href="https://pkgbuild.r-lib.org/reference/has_build_tools.html" class="external-link">has_build_tools</a></span><span class="op">(</span>debug <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
@@ -223,9 +239,10 @@ Python，或当前环境没有安装相应包。</p>
 <h4 id="package-pastri-is-not-available-for-this-version-of-r">
 <code>package 'PASTRI' is not available for this version of R</code><a class="anchor" aria-label="anchor" href="#package-pastri-is-not-available-for-this-version-of-r"></a>
 </h4>
-<p><strong>原因：</strong> <code>install.packages("PASTRI")</code> 会在
-CRAN 中查找，而 PASTRI 当前通过 GitHub 或本地源码安装。</p>
-<p><strong>解决：</strong></p>
+<p><strong>Cause:</strong> <code>install.packages("PASTRI")</code>
+searches CRAN, but PASTRI is currently installed from GitHub or a local
+source checkout.</p>
+<p><strong>Solution:</strong></p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"remotes"</span>, repos <span class="op">=</span> <span class="st">"https://cloud.r-project.org"</span><span class="op">)</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"yuxiaochen11/PASTRI"</span>, dependencies <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
@@ -234,9 +251,10 @@ CRAN 中查找，而 PASTRI 当前通过 GitHub 或本地源码安装。</p>
 <h4 id="error-failed-to-install-unknown-package-from-github">
 <code>Error: Failed to install 'unknown package' from GitHub</code><a class="anchor" aria-label="anchor" href="#error-failed-to-install-unknown-package-from-github"></a>
 </h4>
-<p><strong>原因：</strong> 网络无法访问 GitHub、仓库地址错误、GitHub API
-限流，或缺少 GitHub 凭据。</p>
-<p><strong>排查：</strong></p>
+<p><strong>Cause:</strong> GitHub may be unreachable, the repository
+address may be incorrect, the GitHub API rate limit may have been
+reached, or authentication may be missing.</p>
+<p><strong>Diagnostic installation command:</strong></p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span></span>
 <span>  <span class="st">"yuxiaochen11/PASTRI"</span>,</span>
@@ -244,21 +262,22 @@ CRAN 中查找，而 PASTRI 当前通过 GitHub 或本地源码安装。</p>
 <span>  upgrade <span class="op">=</span> <span class="st">"never"</span>,</span>
 <span>  build_vignettes <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>若日志显示 API rate limit，可创建 GitHub Personal Access
-Token，然后在 R 中配置：</p>
+<p>If the log reports an API rate limit, create a GitHub Personal Access
+Token and configure it in R:</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"gitcreds"</span>, repos <span class="op">=</span> <span class="st">"https://cloud.r-project.org"</span><span class="op">)</span></span>
 <span><span class="fu">gitcreds</span><span class="fu">::</span><span class="fu"><a href="https://gitcreds.r-lib.org/reference/gitcreds_get.html" class="external-link">gitcreds_set</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>不要把 token 写入脚本、README 或提交到 Git。</p>
+<p>Never store a token in a script, README, or Git commit.</p>
 </div>
 <div class="section level4">
 <h4 id="mc-cores-1-is-not-supported-on-windows">
 <code>'mc.cores' &gt; 1 is not supported on Windows</code><a class="anchor" aria-label="anchor" href="#mc-cores-1-is-not-supported-on-windows"></a>
 </h4>
-<p><strong>原因：</strong> Windows 不支持
-<code><a href="https://rdrr.io/r/parallel/mcdummies.html" class="external-link">parallel::mclapply()</a></code> 使用 fork 多进程。</p>
-<p><strong>解决：</strong> 显式设置单核。PASTRI 的高层函数也会在 Windows
-自动回退到单核。</p>
+<p><strong>Cause:</strong> Windows does not support the fork-based
+multicore implementation used by <code><a href="https://rdrr.io/r/parallel/mcdummies.html" class="external-link">parallel::mclapply()</a></code>.</p>
+<p><strong>Solution:</strong> Explicitly request one core. PASTRI’s
+high-level functions also fall back to one core automatically on
+Windows.</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">node_pair_depth</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/calculate_lca_depths.html">calculate_lca_depths</a></span><span class="op">(</span><span class="va">tree.path</span>, mc.cores <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span></span>
@@ -273,14 +292,14 @@ Token，然后在 R 中配置：</p>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level4">
-<h4 id="object-node_info-not-found-或-object-bound_matrix-not-found">
-<code>object 'node_info' not found</code> 或
-<code>object 'bound_matrix' not found</code><a class="anchor" aria-label="anchor" href="#object-node_info-not-found-%E6%88%96-object-bound_matrix-not-found"></a>
+<h4 id="object-node_info-not-found-or-object-bound_matrix-not-found">
+<code>object 'node_info' not found</code> or
+<code>object 'bound_matrix' not found</code><a class="anchor" aria-label="anchor" href="#object-node_info-not-found-or-object-bound_matrix-not-found"></a>
 </h4>
-<p><strong>原因：</strong>
-直接运行了函数帮助页面中的片段，但没有先创建输入对象。</p>
-<p><strong>解决：</strong> 优先运行 README 中的完整 Quick
-start。确认以下对象均已存在：</p>
+<p><strong>Cause:</strong> A partial example from a function reference
+page was executed without first creating its input objects.</p>
+<p><strong>Solution:</strong> Run the complete Quick start example in
+the README. Confirm that the required objects exist:</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/ls.html" class="external-link">ls</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">node_pair_depth</span><span class="op">)</span></span>
@@ -288,21 +307,23 @@ start。确认以下对象均已存在：</p>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">bound_matrix</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level4">
-<h4 id="subscript-out-of-bounds矩阵维度不一致或结果全为-0">
-<code>subscript out of bounds</code>、矩阵维度不一致或结果全为
-0<a class="anchor" aria-label="anchor" href="#subscript-out-of-bounds%E7%9F%A9%E9%98%B5%E7%BB%B4%E5%BA%A6%E4%B8%8D%E4%B8%80%E8%87%B4%E6%88%96%E7%BB%93%E6%9E%9C%E5%85%A8%E4%B8%BA-0"></a>
+<h4 id="subscript-out-of-bounds-incompatible-matrix-dimensions-or-an-all-zero-result">
+<code>subscript out of bounds</code>, incompatible matrix
+dimensions, or an all-zero result<a class="anchor" aria-label="anchor" href="#subscript-out-of-bounds-incompatible-matrix-dimensions-or-an-all-zero-result"></a>
 </h4>
-<p><strong>常见原因：</strong></p>
+<p><strong>Common causes:</strong></p>
 <ul>
 <li>
-<code>cell_type_list</code> 与 <code>Bound_Matrix</code>
-的顺序或维度不一致；</li>
-<li>树的叶标签无法匹配 <code>cell_info$nodeLabel</code>；</li>
-<li>某个选定细胞类型没有 <code>cellNum == 1</code> 的记录；</li>
-<li>没有深度值满足 <code>u &lt;= fi_depth</code>；</li>
-<li>约束矩阵意外禁止了所有候选方向。</li>
+<code>cell_type_list</code> and <code>Bound_Matrix</code> use
+different dimensions or ordering.</li>
+<li>Tree tip labels do not match <code>cell_info$nodeLabel</code>.</li>
+<li>A selected cell type has no record with
+<code>cellNum == 1</code>.</li>
+<li>No depth value satisfies <code>u &lt;= fi_depth</code>.</li>
+<li>The constraint matrix accidentally forbids every candidate
+direction.</li>
 </ul>
-<p><strong>检查：</strong></p>
+<p><strong>Checks:</strong></p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">bound_matrix</span><span class="op">)</span> <span class="op">==</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">cell_types</span><span class="op">)</span>,</span>
@@ -312,20 +333,21 @@ start。确认以下对象均已存在：</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sets.html" class="external-link">setdiff</a></span><span class="op">(</span><span class="va">cell_types</span>, <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">cell_info</span><span class="op">$</span><span class="va">celltype</span><span class="op">[</span><span class="va">cell_info</span><span class="op">$</span><span class="va">cellNum</span> <span class="op">==</span> <span class="fl">1</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sets.html" class="external-link">setdiff</a></span><span class="op">(</span><span class="va">node_pair_depth</span><span class="op">$</span><span class="va">node1</span>, <span class="va">cell_info</span><span class="op">$</span><span class="va">nodeLabel</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="va">node_pair_depth</span><span class="op">$</span><span class="va">lca_normalized_height</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p>输出矩阵采用“行 = 终点、列 = 起点”的方向。若要禁止从 <code>C5</code>
-到 <code>C4</code>，应设置：</p>
+<p>The output matrix uses destinations as rows and sources as columns.
+To forbid a transition from <code>C5</code> to <code>C4</code>, set:</p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bound_matrix</span><span class="op">[</span><span class="st">"C4"</span>, <span class="st">"C5"</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">0</span></span></code></pre></div>
 </div>
 <div class="section level4">
-<h4 id="jupyter-中找不到-r-4-2-3-pastri">Jupyter 中找不到 <code>R 4.2.3 (PASTRI)</code><a class="anchor" aria-label="anchor" href="#jupyter-%E4%B8%AD%E6%89%BE%E4%B8%8D%E5%88%B0-r-4-2-3-pastri"></a>
+<h4 id="jupyter-does-not-show-r-4-2-3-pastri">Jupyter does not show <code>R 4.2.3 (PASTRI)</code><a class="anchor" aria-label="anchor" href="#jupyter-does-not-show-r-4-2-3-pastri"></a>
 </h4>
-<p><strong>原因：</strong> 内核未注册、注册到其他用户，或 Jupyter
-来自另一个环境。</p>
-<p><strong>解决：</strong></p>
+<p><strong>Cause:</strong> The kernel was not registered, was registered
+for another user, or Jupyter is being run from another environment.</p>
+<p><strong>Solution:</strong></p>
 <div class="sourceCode" id="cb22"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="ex">conda</span> activate PASTRI</span>
 <span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a><span class="ex">jupyter</span> kernelspec list</span></code></pre></div>
-<p>然后在该环境的 R 中重新运行：</p>
+<p>Then start R from the active environment and register the kernel
+again:</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">IRkernel</span><span class="fu">::</span><span class="fu">installspec</span><span class="op">(</span></span>
 <span>  name <span class="op">=</span> <span class="st">"pastri"</span>,</span>
@@ -335,20 +357,22 @@ start。确认以下对象均已存在：</p>
 </div>
 </div>
 <div class="section level3">
-<h3 id="最小诊断信息">5. 最小诊断信息<a class="anchor" aria-label="anchor" href="#%E6%9C%80%E5%B0%8F%E8%AF%8A%E6%96%AD%E4%BF%A1%E6%81%AF"></a>
+<h3 id="minimum-diagnostic-information">5. Minimum diagnostic information<a class="anchor" aria-label="anchor" href="#minimum-diagnostic-information"></a>
 </h3>
-<p>提交 issue 或寻求帮助时，请附上以下输出，并删除用户名、token
-等敏感信息：</p>
+<p>When opening an issue or requesting help, include the following
+output after removing usernames, tokens, and other sensitive
+information:</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/libPaths.html" class="external-link">.libPaths</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/packageDescription.html" class="external-link">packageVersion</a></span><span class="op">(</span><span class="st">"PASTRI"</span><span class="op">)</span></span></code></pre></div>
-<p>终端信息：</p>
+<p>Also include the following terminal output:</p>
 <div class="sourceCode" id="cb25"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a><span class="ex">conda</span> info <span class="at">--envs</span></span>
 <span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a><span class="ex">conda</span> list</span>
 <span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a><span class="ex">jupyter</span> kernelspec list</span></code></pre></div>
-<p>同时附上完整错误日志中从第一条 <code>ERROR</code>
-开始的部分，以及触发错误的最小代码。</p>
+<p>Include the complete part of the installation log beginning at the
+first <code>ERROR</code>, together with the smallest code example that
+reproduces the problem.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

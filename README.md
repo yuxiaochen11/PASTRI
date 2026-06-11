@@ -25,24 +25,21 @@ counts:
 - `distance_to_root`: number of edges from the node to the root;
 - `distance_to_farthest_leaf`: maximum number of descendant edges to a leaf.
 
-Let \(D_{\max}\) be the largest `distance_to_farthest_leaf` in the tree. For
-each internal node, the implementation calculates
+Let `D_max` be the largest `distance_to_farthest_leaf` in the tree. For each
+internal node, the implementation calculates:
 
-\[
-\mathrm{normalized\_depth}
-= \frac{1}{2}\left(
-\frac{d_{\mathrm{root}}}{D_{\max}}
-+ 1
-- \frac{d_{\mathrm{leaf}}}{D_{\max}}
-\right)
-\]
+```text
+normalized_depth =
+  0.5 * (distance_to_root / D_max
+         + 1
+         - distance_to_farthest_leaf / D_max)
+```
 
 and
 
-\[
-\mathrm{lca\_normalized\_height}
-= 1 - \mathrm{normalized\_depth}.
-\]
+```text
+lca_normalized_height = 1 - normalized_depth
+```
 
 Every unordered pair of terminal nodes is then assigned the metrics of its
 LCA. The result contains `node1`, `node2`, `subtree_root`, `lca_depth`,
@@ -51,8 +48,8 @@ LCA. The result contains `node1`, `node2`, `subtree_root`, `lca_depth`,
 ### 2. Estimate two-cell correlations at each depth
 
 Terminal nodes are matched to `cell_info$nodeLabel` and assigned cell types.
-For each selected depth value \(u\), PASTRI counts unordered cell-type pairs
-and constructs a symmetric two-cell correlation matrix \(C(u)\). Cell-type
+For each selected depth value `u`, PASTRI counts unordered cell-type pairs
+and constructs a symmetric two-cell correlation matrix `C(u)`. Cell-type
 frequencies among the selected terminal cells are used to standardize this
 matrix.
 
@@ -61,7 +58,7 @@ Only depth values satisfying `u <= fi_depth` are retained. Therefore,
 
 ### 3. Recover one transition matrix per depth
 
-For each retained \(C(u)\), PASTRI:
+For each retained `C(u)`, PASTRI:
 
 1. standardizes the correlation matrix by cell-type frequencies;
 2. performs an eigendecomposition;
@@ -78,11 +75,13 @@ types**. Thus `matrix["C5", "C4"]` is the inferred transition strength from
 
 The mean of the depth-specific matrices initializes an `L-BFGS-B`
 optimization. PASTRI minimizes the sum of Frobenius distances between the
-candidate matrix \(T\) and all depth-specific matrices:
+candidate matrix `T` and all depth-specific matrices:
 
-\[
-\min_T \sum_u \lVert T - T(u) \rVert_F.
-\]
+```text
+minimize over T:  sum over u of ||T - T(u)||_F
+```
+
+Here, `||.||_F` denotes the Frobenius norm.
 
 `Bound_Matrix` supplies the element-wise upper bounds:
 
@@ -196,7 +195,7 @@ head(result$optimal_norm_df_dataframe)
 
 - On Windows, PASTRI automatically uses one core because
   `parallel::mclapply()` does not support fork-based multicore execution.
-- The number of terminal-node pairs grows as \(n(n-1)/2\); large trees can
+- The number of terminal-node pairs grows as `n * (n - 1) / 2`; large trees can
   require substantial memory and runtime.
 - At least one observed depth must satisfy `u <= fi_depth`. If none does,
   increase `fi_depth` or inspect the selected depth column.
