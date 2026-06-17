@@ -58,6 +58,14 @@
 <p>PASTRI infers a directed cell-state transition matrix from a reconstructed lineage tree and terminal-cell annotations. It is designed for lineage trees derived from CRISPR/Cas9 barcodes, somatic mutations, or similar heritable marks.</p>
 <p>The method does not infer transitions from expression pseudotime. Instead, it uses the topology of the lineage tree: terminal cells whose latest common ancestor (LCA) is close to the leaves are treated as observations from a short evolutionary separation, while pairs sharing an older LCA represent a longer separation. PASTRI combines these pairwise relationships across depth values, then applies user-defined upper bounds to encode allowed or forbidden directions.</p>
 <div class="section level2">
+<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h2>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"remotes"</span><span class="op">)</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"yuxiaochen11/PASTRI"</span><span class="op">)</span></span></code></pre></div>
+<p>For a reproducible Conda/R/Jupyter setup and solutions to common installation errors, see <a href="articles/troubleshooting.html">Installation and troubleshooting</a>.</p>
+</div>
+<div class="section level2">
 <h2 id="algorithm-overview">Algorithm overview<a class="anchor" aria-label="anchor" href="#algorithm-overview"></a>
 </h2>
 <p>PASTRI runs in four stages.</p>
@@ -83,18 +91,18 @@
 <div class="section level3">
 <h3 id="id_2-estimate-two-cell-correlations-at-each-depth">2. Estimate two-cell correlations at each depth<a class="anchor" aria-label="anchor" href="#id_2-estimate-two-cell-correlations-at-each-depth"></a>
 </h3>
-<p>Terminal nodes are matched to <code>cell_info$nodeLabel</code> and assigned cell types. For each selected depth value <code>u</code>, PASTRI counts unordered cell-type pairs and constructs a symmetric two-cell correlation matrix <code>C(u)</code>. Cell-type frequencies among the selected terminal cells are used to standardize this matrix.</p>
-<p>Only depth values satisfying <code>u &lt;= fi_depth</code> are retained. Therefore, <code>fi_depth</code> is a depth cutoff, not an optimization tolerance.</p>
+<p>Terminal nodes are matched to <code>cell_info$nodeLabel</code> and assigned cell types. For each selected depth value <code>d</code>, PASTRI counts unordered cell-type pairs and constructs a symmetric two-cell correlation matrix <code>A(d)</code>. Cell-type frequencies among the selected terminal cells are used to standardize this matrix.</p>
+<p>Only depth values satisfying <code>d &lt;= fi_depth</code> are retained. Therefore, <code>fi_depth</code> is a depth cutoff, not an optimization tolerance.</p>
 </div>
 <div class="section level3">
 <h3 id="id_3-recover-one-transition-matrix-per-depth">3. Recover one transition matrix per depth<a class="anchor" aria-label="anchor" href="#id_3-recover-one-transition-matrix-per-depth"></a>
 </h3>
-<p>For each retained <code>C(u)</code>, PASTRI:</p>
+<p>For each retained <code>A(d)</code>, PASTRI:</p>
 <ol style="list-style-type: decimal">
 <li>standardizes the correlation matrix by cell-type frequencies;</li>
 <li>performs an eigendecomposition;</li>
 <li>truncates negative eigenvalues to zero;</li>
-<li>rescales eigenvalues by the depth-dependent power <code>1 / (2 * u)</code>;</li>
+<li>rescales eigenvalues by the depth-dependent power <code>1 / (2 * d)</code>;</li>
 <li>removes negative or undefined entries;</li>
 <li>normalizes every column to sum to one.</li>
 </ol>
@@ -104,7 +112,7 @@
 <h3 id="id_4-apply-constraints-and-obtain-the-consensus-matrix">4. Apply constraints and obtain the consensus matrix<a class="anchor" aria-label="anchor" href="#id_4-apply-constraints-and-obtain-the-consensus-matrix"></a>
 </h3>
 <p>The mean of the depth-specific matrices initializes an <code>L-BFGS-B</code> optimization. PASTRI minimizes the sum of Frobenius distances between the candidate matrix <code>T</code> and all depth-specific matrices:</p>
-<pre class="text"><code>minimize over T:  sum over u of ||T - T(u)||_F</code></pre>
+<pre class="text"><code>minimize over T:  sum over d of ||T - T(d)||_F</code></pre>
 <p>Here, <code>||.||_F</code> denotes the Frobenius norm.</p>
 <p><code>Bound_Matrix</code> supplies the element-wise upper bounds:</p>
 <ul>
@@ -159,14 +167,6 @@
 </table>
 <p>Each value in <code>cell_type_list</code> should occur among the retained terminal cells.</p>
 </div>
-</div>
-<div class="section level2">
-<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
-</h2>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"remotes"</span><span class="op">)</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"yuxiaochen11/PASTRI"</span><span class="op">)</span></span></code></pre></div>
-<p>For a reproducible Conda/R/Jupyter setup and solutions to common installation errors, see <a href="articles/troubleshooting.html">Installation and troubleshooting</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
@@ -267,7 +267,7 @@
 <ul>
 <li>On Windows, PASTRI automatically uses one core because <code><a href="https://rdrr.io/r/parallel/mcdummies.html" class="external-link">parallel::mclapply()</a></code> does not support fork-based multicore execution.</li>
 <li>The number of terminal-node pairs grows as <code>n * (n - 1) / 2</code>; large trees can require substantial memory and runtime.</li>
-<li>At least one observed depth must satisfy <code>u &lt;= fi_depth</code>. If none does, increase <code>fi_depth</code> or inspect the selected depth column.</li>
+<li>At least one observed depth must satisfy <code>d &lt;= fi_depth</code>. If none does, increase <code>fi_depth</code> or inspect the selected depth column.</li>
 <li>
 <code>cell_type_list</code> order and <code>Bound_Matrix</code> order must be identical.</li>
 <li>The output represents model-derived transition strengths under the supplied lineage and constraints; causal interpretation requires independent biological evidence.</li>

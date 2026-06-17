@@ -41,11 +41,11 @@ calculate_transition_matrix_error <- function(initial_vector, observed_matrices,
 #' @title Calculate Transition Matrix from Two-Cell Correlation
 #'
 #' @description
-#' This function calculates cell transition matrices based on two-cell correlation functions C(u).
+#' This function calculates cell transition matrices based on two-cell correlation matrices A(d).
 #' It first computes the frequency of each cell type (using only single-leaf nodes), then builds
 #' a standardized cell type combination to avoid duplicate counts. Using the node pair depth data
 #' and selected depth measure (e.g., "lca_normalized_height" or "lca_depth"), the function computes
-#' the correlation frequencies for each depth. For each depth (up to a maximum threshold fi_depth),
+#' the correlation frequencies for each depth value d. For each depth d (up to a maximum threshold fi_depth),
 #' a corresponding transition matrix is computed using eigenvalue decomposition, where the eigenvalues
 #' are adjusted according to the depth. Finally, the average transition matrix from all depths is
 #' used as the initial guess for an optimization procedure (via the L-BFGS-B method) to derive the
@@ -87,7 +87,7 @@ calculate_transition_matrix <- function(node_pair_depth, node_info, sel_u, use_c
     as.data.frame() %>%
     mutate(freq = Freq / sum(Freq))
   
-  #### 2. Compute two-cell correlation functions C(u)
+  #### 2. Compute two-cell correlation matrices A(d)
   # 2.1 Retain and round the selected depth measure in node_pair_depth
   node_pair_depth <- node_pair_depth %>%
     mutate(lca_normalized_height_raw = lca_normalized_height) %>%
@@ -127,50 +127,50 @@ calculate_transition_matrix <- function(node_pair_depth, node_info, sel_u, use_c
   colnames(freq_celltype_matrix) <- freq_celltype$celltype
   freq_celltype_matrix <- freq_celltype_matrix[, cell_type_list]
   
-  # 2.6 Compute the two-cell correlation functions C(u) using the selected depth measure (sel_u)
+  # 2.6 Compute the two-cell correlation matrices A(d) using the selected depth measure (sel_u)
   depth_values <- sort(unique(unlist(node_pair_depth[, sel_u])))
-  Cu <- mclapply(seq_along(depth_values), function(d) {
+  Ad <- mclapply(seq_along(depth_values), function(d) {
     current_depth <- depth_values[d]
-    cu_subset <- node_pair_depth %>% filter(!!sym(sel_u) == current_depth)
-    type_comb_counts <- table(cu_subset$type_combined) %>% as.data.frame()
+    ad_subset <- node_pair_depth %>% filter(!!sym(sel_u) == current_depth)
+    type_comb_counts <- table(ad_subset$type_combined) %>% as.data.frame()
     colnames(type_comb_counts) <- c("type_combined", "combined_count")
-    type_comb_counts$Cu_freq <- type_comb_counts$combined_count / sum(type_comb_counts$combined_count)
-    type_comb_counts$u <- current_depth
+    type_comb_counts$Ad_freq <- type_comb_counts$combined_count / sum(type_comb_counts$combined_count)
+    type_comb_counts$d <- current_depth
     return(type_comb_counts)
   }, mc.cores = use_cores) %>% bind_rows()
   
   # Split the combined cell types into two separate columns
-  Cu <- Cu %>% mutate(temp = type_combined) %>% separate(temp, into = c("cell_1", "cell_2"), sep = "_")
+  Ad <- Ad %>% mutate(temp = type_combined) %>% separate(temp, into = c("cell_1", "cell_2"), sep = "_")
   
   #### 3. Compute the transition matrix for each depth
   all_trans_matrix_list <- list()
-  depth_values <- unique(Cu$u)
+  depth_values <- unique(Ad$d)
   # Only consider depths less than or equal to fi_depth
   depth_values <- depth_values[depth_values <= fi_depth]
   
   lapply(seq_along(depth_values), function(depth_index) {
     current_depth <- depth_values[depth_index]
-    cu_subset <- Cu %>% filter(u == current_depth)
+    ad_subset <- Ad %>% filter(d == current_depth)
     
-    # Build an initial C(u) count matrix with rows and columns corresponding to cell_type_list
-    cu_matrix <- matrix(0, nrow = length(cell_type_list), ncol = length(cell_type_list))
-    colnames(cu_matrix) <- cell_type_list
-    rownames(cu_matrix) <- cell_type_list
+    # Build an initial A(d) count matrix with rows and columns corresponding to cell_type_list
+    ad_matrix <- matrix(0, nrow = length(cell_type_list), ncol = length(cell_type_list))
+    colnames(ad_matrix) <- cell_type_list
+    rownames(ad_matrix) <- cell_type_list
     
-    lapply(seq_len(nrow(cu_subset)), function(s) {
-      cell_1 <- cu_subset$cell_1[s]
-      cell_2 <- cu_subset$cell_2[s]
-      count <- cu_subset$combined_count[s]
-      cu_matrix[cell_1, cell_2] <<- cu_matrix[cell_1, cell_2] + count
-      cu_matrix[cell_2, cell_1] <<- cu_matrix[cell_2, cell_1] + count
+    lapply(seq_len(nrow(ad_subset)), function(s) {
+      cell_1 <- ad_subset$cell_1[s]
+      cell_2 <- ad_subset$cell_2[s]
+      count <- ad_subset$combined_count[s]
+      ad_matrix[cell_1, cell_2] <<- ad_matrix[cell_1, cell_2] + count
+      ad_matrix[cell_2, cell_1] <<- ad_matrix[cell_2, cell_1] + count
       return(NULL)
     })
     
-    # Normalize the C(u) matrix
-    cu_matrix <- cu_matrix / sum(cu_matrix)
+    # Normalize the A(d) matrix
+    ad_matrix <- ad_matrix / sum(ad_matrix)
     
-    # Calculate an intermediate matrix Tmp based on cu_matrix and the cell type frequency matrix
-    Tmp <- cu_matrix / (t(sqrt(freq_celltype_matrix)) %*% sqrt(freq_celltype_matrix))
+    # Calculate an intermediate matrix Tmp based on ad_matrix and the cell type frequency matrix
+    Tmp <- ad_matrix / (t(sqrt(freq_celltype_matrix)) %*% sqrt(freq_celltype_matrix))
     Tmp <- replace(Tmp, is.nan(Tmp), 0)
     
     # Perform eigen decomposition on Tmp
@@ -230,4 +230,3 @@ calculate_transition_matrix <- function(node_pair_depth, node_info, sel_u, use_c
   return(list(all_trans_matrix_list = all_trans_matrix_list,
               optimal_trans_matrix = optimal_matrix))
 }
-

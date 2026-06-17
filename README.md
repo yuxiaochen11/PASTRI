@@ -13,6 +13,16 @@ separation. PASTRI combines these pairwise relationships across depth values,
 then applies user-defined upper bounds to encode allowed or forbidden
 directions.
 
+## Installation
+
+```r
+install.packages("remotes")
+remotes::install_github("yuxiaochen11/PASTRI")
+```
+
+For a reproducible Conda/R/Jupyter setup and solutions to common installation
+errors, see [Installation and troubleshooting](https://yuxiaochen11.github.io/PASTRI/articles/troubleshooting.html).
+
 ## Algorithm overview
 
 PASTRI runs in four stages.
@@ -48,22 +58,22 @@ LCA. The result contains `node1`, `node2`, `subtree_root`, `lca_depth`,
 ### 2. Estimate two-cell correlations at each depth
 
 Terminal nodes are matched to `cell_info$nodeLabel` and assigned cell types.
-For each selected depth value `u`, PASTRI counts unordered cell-type pairs
-and constructs a symmetric two-cell correlation matrix `C(u)`. Cell-type
+For each selected depth value `d`, PASTRI counts unordered cell-type pairs
+and constructs a symmetric two-cell correlation matrix `A(d)`. Cell-type
 frequencies among the selected terminal cells are used to standardize this
 matrix.
 
-Only depth values satisfying `u <= fi_depth` are retained. Therefore,
+Only depth values satisfying `d <= fi_depth` are retained. Therefore,
 `fi_depth` is a depth cutoff, not an optimization tolerance.
 
 ### 3. Recover one transition matrix per depth
 
-For each retained `C(u)`, PASTRI:
+For each retained `A(d)`, PASTRI:
 
 1. standardizes the correlation matrix by cell-type frequencies;
 2. performs an eigendecomposition;
 3. truncates negative eigenvalues to zero;
-4. rescales eigenvalues by the depth-dependent power `1 / (2 * u)`;
+4. rescales eigenvalues by the depth-dependent power `1 / (2 * d)`;
 5. removes negative or undefined entries;
 6. normalizes every column to sum to one.
 
@@ -78,7 +88,7 @@ optimization. PASTRI minimizes the sum of Frobenius distances between the
 candidate matrix `T` and all depth-specific matrices:
 
 ```text
-minimize over T:  sum over u of ||T - T(u)||_F
+minimize over T:  sum over d of ||T - T(d)||_F
 ```
 
 Here, `||.||_F` denotes the Frobenius norm.
@@ -112,16 +122,6 @@ and columns are normalized again.
 | `cellNum` | number of cells represented by the node; only `cellNum == 1` is used |
 
 Each value in `cell_type_list` should occur among the retained terminal cells.
-
-## Installation
-
-```r
-install.packages("remotes")
-remotes::install_github("yuxiaochen11/PASTRI")
-```
-
-For a reproducible Conda/R/Jupyter setup and solutions to common installation
-errors, see [Installation and troubleshooting](articles/troubleshooting.html).
 
 ## Quick start
 
@@ -197,7 +197,7 @@ head(result$optimal_norm_df_dataframe)
   `parallel::mclapply()` does not support fork-based multicore execution.
 - The number of terminal-node pairs grows as `n * (n - 1) / 2`; large trees can
   require substantial memory and runtime.
-- At least one observed depth must satisfy `u <= fi_depth`. If none does,
+- At least one observed depth must satisfy `d <= fi_depth`. If none does,
   increase `fi_depth` or inspect the selected depth column.
 - `cell_type_list` order and `Bound_Matrix` order must be identical.
 - The output represents model-derived transition strengths under the supplied

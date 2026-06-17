@@ -289,7 +289,7 @@ str(bound_matrix)
 - `cell_type_list` and `Bound_Matrix` use different dimensions or ordering.
 - Tree tip labels do not match `cell_info$nodeLabel`.
 - A selected cell type has no record with `cellNum == 1`.
-- No depth value satisfies `u <= fi_depth`.
+- No depth value satisfies `d <= fi_depth`.
 - The constraint matrix accidentally forbids every candidate direction.
 
 **Checks:**
