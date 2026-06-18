@@ -15,9 +15,30 @@ directions.
 
 ## Installation
 
+The recommended installation method uses GitHub's ZIP archive endpoint. This
+avoids the GitHub REST API request that `remotes::install_github()` makes when
+it checks the package `DESCRIPTION` file, so it is less likely to fail with API
+rate-limit errors.
+
 ```r
-install.packages("remotes")
-remotes::install_github("yuxiaochen11/PASTRI")
+install.packages("remotes", repos = "https://cloud.r-project.org")
+remotes::install_url(
+  "https://github.com/yuxiaochen11/PASTRI/archive/refs/heads/main.zip",
+  dependencies = TRUE,
+  upgrade = "never"
+)
+```
+
+If you prefer `install_github()`, use it only when GitHub API access is not
+rate-limited, or after configuring a GitHub Personal Access Token:
+
+```r
+remotes::install_github(
+  "yuxiaochen11/PASTRI",
+  dependencies = TRUE,
+  upgrade = "never",
+  build_vignettes = FALSE
+)
 ```
 
 For a reproducible Conda/R/Jupyter setup and solutions to common installation

@@ -80,18 +80,34 @@ jupyter kernelspec list
 
 ## 3. Install PASTRI
 
+The recommended method is to install from the GitHub ZIP archive. This route
+does not need GitHub's REST API to read the `DESCRIPTION` file, so it avoids a
+common `api.github.com` rate-limit failure from `remotes::install_github()`.
+
 Run the following commands in the R console:
 
 ```r
 install.packages("remotes", repos = "https://cloud.r-project.org")
-remotes::install_github(
-  "yuxiaochen11/PASTRI",
+remotes::install_url(
+  "https://github.com/yuxiaochen11/PASTRI/archive/refs/heads/main.zip",
   dependencies = TRUE,
   upgrade = "never"
 )
 
 library(PASTRI)
 packageVersion("PASTRI")
+```
+
+You can also use `install_github()` when GitHub API access is available, or
+after configuring a GitHub Personal Access Token:
+
+```r
+remotes::install_github(
+  "yuxiaochen11/PASTRI",
+  dependencies = TRUE,
+  upgrade = "never",
+  build_vignettes = FALSE
+)
 ```
 
 To install PASTRI from a local source checkout instead:
@@ -197,7 +213,7 @@ often only a summary.
 2. Install the missing R package named near the first error.
 3. On Windows, install Rtools42 for R 4.2.x.
 4. On Linux, install the development library identified by the first error.
-5. Run `remotes::install_github(..., dependencies = TRUE)` again.
+5. Run the ZIP-based `remotes::install_url(...)` command again.
 
 On Windows, check whether R can find the build tools:
 
@@ -215,32 +231,71 @@ installed from GitHub or a local source checkout.
 
 ```r
 install.packages("remotes", repos = "https://cloud.r-project.org")
-remotes::install_github("yuxiaochen11/PASTRI", dependencies = TRUE)
+remotes::install_url(
+  "https://github.com/yuxiaochen11/PASTRI/archive/refs/heads/main.zip",
+  dependencies = TRUE,
+  upgrade = "never"
+)
 ```
 
 ### `Error: Failed to install 'unknown package' from GitHub`
 
-**Cause:** GitHub may be unreachable, the repository address may be incorrect,
-the GitHub API rate limit may have been reached, or authentication may be
-missing.
+**Cause:** This often happens before package installation actually starts.
+`remotes::install_github()` first calls the GitHub REST API URL
+`https://api.github.com/repos/yuxiaochen11/PASTRI/contents/DESCRIPTION?ref=HEAD`
+to read the package metadata. If GitHub returns `403 rate limit exceeded`, R
+reports:
 
-**Diagnostic installation command:**
+```text
+Failed to install 'unknown package' from GitHub:
+  cannot open URL 'https://api.github.com/repos/yuxiaochen11/PASTRI/contents/DESCRIPTION?ref=HEAD'
+```
+
+That message does not mean the package is missing. It means the current IP or
+session has exhausted GitHub's unauthenticated API quota, or API access is
+blocked by the network.
+
+**Recommended solution:** Install from the ZIP archive instead of the GitHub
+API:
 
 ```r
+install.packages("remotes", repos = "https://cloud.r-project.org")
+remotes::install_url(
+  "https://github.com/yuxiaochen11/PASTRI/archive/refs/heads/main.zip",
+  dependencies = TRUE,
+  upgrade = "never"
+)
+```
+
+If the ZIP URL is blocked by the network, download the archive manually from:
+
+```text
+https://github.com/yuxiaochen11/PASTRI/archive/refs/heads/main.zip
+```
+
+Then install the downloaded file:
+
+```r
+remotes::install_local(
+  "path/to/PASTRI-main.zip",
+  dependencies = TRUE,
+  upgrade = "never"
+)
+```
+
+**Alternative:** Configure a GitHub Personal Access Token and retry
+`install_github()`:
+
+```r
+install.packages("gitcreds", repos = "https://cloud.r-project.org")
+gitcreds::gitcreds_set()
+
 remotes::install_github(
   "yuxiaochen11/PASTRI",
   dependencies = TRUE,
   upgrade = "never",
   build_vignettes = FALSE
 )
-```
-
-If the log reports an API rate limit, create a GitHub Personal Access Token
-and configure it in R:
-
-```r
-install.packages("gitcreds", repos = "https://cloud.r-project.org")
-gitcreds::gitcreds_set()
 ```
 
 Never store a token in a script, README, or Git commit.
